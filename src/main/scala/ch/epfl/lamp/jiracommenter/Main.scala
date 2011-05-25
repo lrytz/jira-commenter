@@ -1,6 +1,6 @@
 package ch.epfl.lamp.jiracommenter
 
-object Main {
+object Main extends CommitParser {
   val username = "anonymous"
   val password = "PassWord00"
 
@@ -17,7 +17,7 @@ object Main {
 
 
     for (commit <- commits) {
-      val (closed, reopened, mentioned) = analyze(commit)
+      val (closed, reopened, mentioned) = analyze(commit.message.toLowerCase)
 
       println(closed)
       println(reopened)
@@ -43,46 +43,5 @@ object Main {
     println(jira.transitionsFor("TEST-1"))
     jira.closeIssue("TEST-1", "haha reopen :)")
 */
-  }
-
-
-  val closeCommand = List("closes", "closed", "close", "fixes", "fixed", "fix")
-  val reopenCommand = List("reopens", "reopened", "reopen")
-
-  val ticketReg = """(?:#|SI-|SI_|SI)(\d+)"""
-
-  def analyze(commit: Jenkins.Commit) = {
-    val msg = commit.message.toLowerCase
-
-    val closeParts = parts(msg, closeCommand)
-    val reopenParts = parts(msg, reopenCommand)
-
-    val closed: Set[String] = closeParts.flatMap(ticketsIn(_))
-    val reopened: Set[String] = reopenParts.flatMap(ticketsIn(_))
-
-    val mentioned: Set[String] = (ticketsIn(msg) diff closed) diff reopened
-
-    (closed, reopened, mentioned)
-  }
-
-  def parts(msg: String, commands: List[String]): Set[String] = {
-    def sub(str: String): Set[String] = {
-      val Reg = ("""\s+((?:"""+ ticketReg +""",? ?)*)(?:.|\s)*""").r
-      str match {
-        case Reg(s, _) => Set(s)
-        case _ => Set()
-      }
-    }
-
-    var p = Array(msg)
-    for (c <- commands) {
-      p = p.flatMap(_.split(c))
-    }
-    val set = p.tail.toSet
-    set.flatMap(sub(_))
-  }
-
-  def ticketsIn(msg: String): Set[String] = {
-    ticketReg.r.findAllIn(msg).matchData.map("SI-"+_.group(1)).toSet
   }
 }
