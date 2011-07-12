@@ -49,7 +49,7 @@ object Main {
   val closeCommand = List("closes", "closed", "close", "fixes", "fixed", "fix")
   val reopenCommand = List("reopens", "reopened", "reopen")
 
-  val ticketReg = """(?:#|SI-|SI_|SI)(\d+)"""
+  val ticketReg = """(?:#|si-|si_|si)(\d+)"""
 
   def analyze(commit: Jenkins.Commit) = {
     val msg = commit.message.toLowerCase
