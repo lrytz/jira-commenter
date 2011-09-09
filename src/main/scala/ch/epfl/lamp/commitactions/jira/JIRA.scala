@@ -1,4 +1,5 @@
-package ch.epfl.lamp.jiracommenter
+package ch.epfl.lamp.commitactions
+package jira
 
 import scala.util.parsing.json._
 import JSONTools._

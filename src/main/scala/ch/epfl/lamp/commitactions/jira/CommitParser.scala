@@ -1,6 +1,7 @@
-package ch.epfl.lamp.jiracommenter
+package ch.epfl.lamp.commitactions
+package jira
 
-trait CommitParser {
+object CommitParser {
   val closeCommand = List("closes", "closed", "close", "fixes", "fixed", "fix")
   val reopenCommand = List("reopens", "reopened", "reopen")
 
@@ -40,7 +41,7 @@ trait CommitParser {
   }
 }
 
-object TestCommitParser extends App with CommitParser {
+object TestCommitParser extends App {
   lazy val commits = {
     // the file with the commit messages is not included in the repo, 
     // as it is huge and can easily be generated: `git log --format="%B##################################################" > /tmp/msgs`
@@ -51,7 +52,7 @@ object TestCommitParser extends App with CommitParser {
   }
 
   for (msg <- commits) {
-    val (closed, reopened, mentioned) = analyze(msg)
+    val (closed, reopened, mentioned) = CommitParser.analyze(msg)
 
     println("##################################################")
     println(msg)

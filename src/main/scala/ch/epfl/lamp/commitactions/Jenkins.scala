@@ -1,4 +1,4 @@
-package ch.epfl.lamp.jiracommenter
+package ch.epfl.lamp.commitactions
 
 import util.parsing.json._
 import JSONTools._

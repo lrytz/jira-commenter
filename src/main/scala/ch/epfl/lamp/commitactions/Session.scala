@@ -1,4 +1,4 @@
-package ch.epfl.lamp.jiracommenter
+package ch.epfl.lamp.commitactions
 
 import java.net.{HttpURLConnection, URL, URLConnection}
 import java.io.OutputStreamWriter

@@ -1,0 +1,13 @@
+/.history
+/.project
+/.scala_dependencies
+
+/project/boot/
+/project/target/
+/project/plugins/project/
+/project/plugins/target/
+
+/.target/
+/target/
+/out/
+/bin/
