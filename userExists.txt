@@ -1,0 +1,7 @@
+# GET on http://localhost:3990/fecru/rest-service/users-v1/{username}
+#
+# Headers:
+#   Content-Type: application/xml; charset=UTF-8
+#   Authorization: Basic YWRtaW46YWRtaW4=
+#
+# No data. Answer: 404 (user doesn't exist), 200 (profile), 403 (not permitted)

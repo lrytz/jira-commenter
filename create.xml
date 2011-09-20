@@ -1,0 +1,59 @@
+<!--
+
+POST on http://localhost:3990/fecru/rest-service/reviews-v1
+
+Headers:
+  Content-Type: application/xml; charset=UTF-8
+  Authorization: Basic YWRtaW46YWRtaW4=
+
+
+http://confluence.atlassian.com/display/FECRUDEV/REST+API+Guide
+http://confluence.atlassian.com/display/FECRUDEV/Authenticating+REST+Requests
+http://docs.atlassian.com/fisheye-crucible/2.1.0/wadl/crucible.html#d2e548
+http://docs.atlassian.com/fisheye-crucible/latest/wadl/fisheye.html#d2e2
+
+REST console in chrome is cool
+
+
+If the changeset id doesn't exist, the review is still created. but it stays in draft.
+
+Also, the REST api returns an error message, and one cannot see the created review ID.
+
+Therefore: check first if the revision exists, wait a bit if it doesnt, then at some point fail.
+
+-->
+
+<createReview>
+  <reviewData>
+    <!-- allowReviewersToJoin -->
+    <author><userName>oburn</userName></author>
+    <!-- closeDate -->
+    <!-- createDate -->
+    <creator><userName>oburn</userName></creator>
+    <description>entire commit message
+with new lines etc
+
+need to escape html tags (!!).</description>
+    <!-- dueDate -->
+    <!-- jiraIssueKey -->
+    <!-- metricsVersion -->
+    <!-- <moderator/> -->
+    <name>rewiew name (first line of commit message)</name>
+    <!-- parentReview -->
+    <!-- permaId -->
+    <projectKey>CR</projectKey>
+    <!-- reminderDate -->
+    <state>Review</state> <!-- only if there are reviewers, otherwise Draft (or empty?) -->
+    <!-- summary -->
+    <type>REVIEW</type> <!-- necessary? anyway, just leave it in -->
+
+  </reviewData>
+
+  <!-- patch -->
+  <!-- anchor -->
+
+  <changesets>
+    <changesetData><id>1025</id></changesetData>
+    <repository>checkstyle</repository>
+  </changesets>
+</createReview>

@@ -1,0 +1,24 @@
+<!--
+
+POST on http://localhost:3990/fecru/rest-service/reviews-v1/{id}/comments
+
+Headers:
+  Content-Type: application/xml; charset=UTF-8
+  Authorization: Basic YWRtaW46YWRtaW4=
+
+-->
+<generalCommentData>
+  <!-- createDate -->
+  <!-- defectApproved -->
+  <!-- defectRaised -->
+  <!-- deleted -->
+  <!-- draft -->
+  <message>*error*: no user found for reviewer fuubar</message> <!-- use fisheye markup syntax (?) -->
+  <!-- metrics -->
+  <!-- parentCommentId -->
+  <!-- readStatus -->
+  <!-- replies -->
+  <user><userName>oburn</userName></user> <!-- this is ignored; the author is the authenticated user -->
+  <!-- permId -->
+  <!-- permaId -->
+</generalCommentData>

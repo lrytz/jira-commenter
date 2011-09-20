@@ -1,0 +1,9 @@
+# POST on http://localhost:3990/fecru/rest-service/reviews-v1/{id}/reviewers
+#
+# Headers:
+#   Content-Type: application/xml; charset=UTF-8
+#   Authorization: Basic YWRtaW46YWRtaW4=
+#
+# Data below: comma-separated list of usernames. NO SPACES! Keep Content-Type application/xml!
+
+admin,lkuehne
