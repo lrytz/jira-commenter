@@ -7,7 +7,7 @@ object Main {
   def main(args: Array[String]) {
 //    val buildURL = "https://scala-webapps.epfl.ch/jenkins/job/scala-checkin/4112/api/json"
     val buildURL = args(0)
-
+    val crucibleBaseURL = args(1)
     val commits = Jenkins.getCommitData(buildURL)
 
     println("commits:")
@@ -39,11 +39,11 @@ object Main {
     }
     
     val fecruSession = new AuthSession(username, password)
-    val fecruActions = new fecru.Actions(fecruSession)
+    val fecruActions = new fecru.Actions(fecruSession, crucibleBaseURL)
     
     for (commit <- commits) {
       if(fecru.Actions.needReview(commit.message)) {
-        val (reviewers, comment, community) = fecruActions.parseMessage(commit.message, commit.user)
+        val (reviewers: scala.List[String], comment: String, community) = fecruActions.parseMessage(commit.message, commit.user)
         println("\nparsed message:")
         println(reviewers)
         println(comment)

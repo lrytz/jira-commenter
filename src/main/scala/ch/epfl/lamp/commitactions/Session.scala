@@ -28,7 +28,7 @@ class Session(val userAgent: String = "", val encoding: String = "UTF-8", val re
   // conn.setChunkedStreamingMode(0)
   }
 
-  def doHttp(url: String, method: String = "GET", outputData: Option[String] = None, contentType: String = ""): String = {
+  def doHttp(url: String, method: String = "GET", outputData: Option[String] = None, contentType: String = ""): (Int, String) = {
     val conn = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
 
     setupConnection(conn)
@@ -48,11 +48,11 @@ class Session(val userAgent: String = "", val encoding: String = "UTF-8", val re
     }
 
     saveCookies(conn)
-
+    val responseCode = conn.getResponseCode
     val res = Source.fromInputStream(conn.getInputStream).getLines().mkString
-    // println("res: " + conn.getResponseCode)
     conn.disconnect()
-    res
+
+    (responseCode, res)
   }
 }
 

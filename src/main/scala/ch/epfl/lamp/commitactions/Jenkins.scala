@@ -6,7 +6,7 @@ import JSONTools._
 object Jenkins {
   def getCommitData(url: String): List[Commit] = {
     val session = new Session()
-    parseJson(session.doHttp(url)) match {
+    parseJson(session.doHttp(url)._2) match {
       case JSONObject(build) =>
         build("changeSet") match {
           case JSONObject(changes) =>

@@ -60,11 +60,11 @@ class JIRA(val session: AuthSession, val baseUrl: String = "https://issues.scala
   import JIRA._
 
   def transitionsFor(issue: String) = {
-    parsePossibleTransitions(parseJson(session.doHttp(baseUrl+"issue/"+issue+"/transitions")))
+    parsePossibleTransitions(parseJson(session.doHttp(baseUrl+"issue/"+issue+"/transitions")._2))
   }
 
   private def updateIssue(issue: String, data: JSONObject) {
-    session.doHttp(baseUrl+"issue/"+issue+"/transitions", "POST", Some(data.toString), "application/json")
+    session.doHttp(baseUrl+"issue/"+issue+"/transitions", "POST", Some(data.toString()), "application/json")._2
   }
 
   def closeIssue(issue: String, comment: String, resolution: String = "Fixed") {
