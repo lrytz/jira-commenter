@@ -59,7 +59,12 @@ object Main {
           if (comment.nonEmpty)
             fecruActions.addComment(id, comment, commit.user)
         
-          fecruActions.addReviewers(id, reviewers, community)
+          if (!startReview) {
+            val txt = "{color:red}*review creator error*{color}: no reviewers specified. please add them manually and click \"Start Review\"."
+            fecruActions.addComment(id, txt, commit.user)
+          }
+
+          fecruActions.addReviewers(id, reviewers)
         }
       }
       

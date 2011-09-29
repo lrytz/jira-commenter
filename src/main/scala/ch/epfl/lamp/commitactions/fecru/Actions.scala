@@ -18,7 +18,7 @@ object Actions {
 
   def needReview(commitMessage: String): Boolean = {
     val msg = commitMessage.toLowerCase
-    noReview.exists(msg.contains(_))
+    !noReview.exists(msg.contains(_))
   }
 
 
@@ -93,13 +93,17 @@ class Actions(session: Session, crucibleBaseURL: String = "https://codereview.sc
     val (responseCode: Int, response) =
       session.doHttp(crucibleBaseURL + "rest-service/reviews-v1/", "POST", Some(getXMLString(requestXML)), "application/xml")
 
-    // parse response
-    val responseXML = scala.xml.XML.loadString(response)
-    val id = (responseXML \ "permaId" \ "id").text
+    if (Session.isSuccess(responseCode)) {
+      // parse response
+      val responseXML = scala.xml.XML.loadString(response)
+      val id = (responseXML \ "permaId" \ "id").text
 
-    if (id.trim.length == 0) throw new RuntimeException("Unable to locate id in: createReview response!!!")
+      if (id.trim.length == 0) throw new RuntimeException("Unable to locate id in: createReview response!!!")
 
-    id
+      id
+    } else {
+      throw new RuntimeException(response)
+    }
   }
 
   def addComment(reviewId: String, message: String, commenter: String) {
@@ -117,13 +121,11 @@ class Actions(session: Session, crucibleBaseURL: String = "https://codereview.sc
     checkResponse(responseCode, "while adding comment by "+ commenter +" to "+ reviewId +": "+ message)
   }
 
-  def addReviewers(reviewId: String, reviewers: List[String], community: Boolean) {
-    val allReviewers = {
-      if (community) "community" :: reviewers
-      else reviewers
+  def addReviewers(reviewId: String, reviewers: List[String]) {
+    if (reviewers.nonEmpty) {
+      val (responseCode: Int, data) = session.doHttp(crucibleBaseURL + "rest-service/reviews-v1/" + reviewId +"/reviewers", "POST", Some(reviewers.mkString(",")), "application/xml")
+      checkResponse(responseCode, "while adding reviewers to "+ reviewId +": "+ reviewers)
     }
-    val (responseCode: Int, data) = session.doHttp(crucibleBaseURL + "rest-service/reviews-v1/" + reviewId, "POST", Some(allReviewers.mkString(",")), "application/xml")
-    checkResponse(responseCode, "while adding reviewers to "+ reviewId +": "+ allReviewers)
   }
 
   def userExists(user: String): Boolean =
@@ -136,15 +138,15 @@ class Actions(session: Session, crucibleBaseURL: String = "https://codereview.sc
     var timeout = 10
     while (!changeSetExists(changeSet) && timeout <= Actions.waitTimeoutSecs) {
       println("changeset not found, waiting for "+ timeout +" seconds")
-      Thread.sleep(timeout)
+      Thread.sleep(timeout * 1000)
       timeout *= 2
     }
     if (changeSetExists(changeSet)) op
-    else throw new RuntimeException("Changeset "+ changeSet +"not found in crucible")
+    else throw new RuntimeException("Changeset "+ changeSet +" not found in crucible")
   }
     
   def parseMessage(commitMessage: String, commiter: String): (List[String], String, Boolean) = {
-    val comment = new StringBuffer()
+    var commentLines = List[String]()
 
     var community = false
     val reviewUsers = Actions.parseReviewers(commitMessage).flatMap(reviewer => {
@@ -159,17 +161,16 @@ class Actions(session: Session, crucibleBaseURL: String = "https://codereview.sc
           Some(reviewer)
         } else {
           val msg = "no curcible user found for reviewer %s.".format(reviewer)
-          comment.append("{color:red}*review creator error*{color}: ").append(msg).append("\n")
-          println("\n" + msg)
+          commentLines  = ("{color:red}*Review creator error*{color}: " + msg) :: commentLines
           None
         }
       }
     })
-    (reviewUsers, comment.toString(), community)
+    (reviewUsers, commentLines.mkString("\n"), community)
   }
 
   private def checkResponse(responseCode: Int, details: String) {
-    if (responseCode != HttpURLConnection.HTTP_OK)
+    if (!Session.isSuccess(responseCode))
       throw new RuntimeException("Web service responded with error code " + responseCode +" ["+ details +"]")
   }
 

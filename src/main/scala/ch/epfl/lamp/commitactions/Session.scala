@@ -5,6 +5,10 @@ import java.io.OutputStreamWriter
 import collection.JavaConversions._
 import io.Source
 
+object Session {
+  def isSuccess(httpCode: Int) = httpCode >= 200 && httpCode < 300
+}
+
 class Session(val userAgent: String = "", val encoding: String = "UTF-8", val requestTimeout: Int = 15000) {
   var cookies = Map[String, String]()
 
@@ -49,7 +53,15 @@ class Session(val userAgent: String = "", val encoding: String = "UTF-8", val re
 
     saveCookies(conn)
     val responseCode = conn.getResponseCode
-    val res = Source.fromInputStream(conn.getInputStream).getLines().mkString
+    val res = {
+      val stream = {
+        if (Session.isSuccess(responseCode))
+          conn.getInputStream
+        else
+          conn.getErrorStream
+      }
+      Source.fromInputStream(stream).getLines().mkString
+    }
     conn.disconnect()
 
     (responseCode, res)
