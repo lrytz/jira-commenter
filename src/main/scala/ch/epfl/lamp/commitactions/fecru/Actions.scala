@@ -7,7 +7,9 @@ import xml.Node
 object Actions {
   val projectKey = "SR"
   val repository = "scala-svn"
-  val metricsVersion = 1
+  // val metricsVersion = 1
+    
+  val waitTimeoutSecs = 160
 
   // review name should not be longer than 255 (for the database)
   val reviewNameSize = 200
@@ -46,60 +48,50 @@ object Actions {
 
 }
 
-class Actions(session: Session, crucibleBaseURL: String) {
-  def createReview(authorCreator: String, commitMessage: String, changeSet: Int, startReview: Boolean): String = {
+class Actions(session: Session, crucibleBaseURL: String = "https://codereview.scala-lang.org/fisheye/") {
+  def createReview(authorCreator: String, commitMessage: String, changeSet: Int, startReview: Boolean, community: Boolean): String = {
 
     val reviewName =
-      ((if (true) "[community] " else "") +
+      ((if (community) "[community] " else "") +
         commitMessage.split("\n").find(line => {
           line.trim.length > 0
         }).getOrElse("Unnamed review! (Commit message was empty)")).take(Actions.reviewNameSize)
 
-    val requestXML =
-      <createReview>
-        <reviewData>
+    /*
           <allowReviewersToJoin>true</allowReviewersToJoin>
-          <author>
-            <userName>
-              {authorCreator}
-            </userName>
-          </author>
+
           <createDate>
             {new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new java.util.Date)}
           </createDate>
+
+          <metricsVersion>{Actions.metricsVersion}</metricsVersion>
+     */
+        
+    val requestXML =
+      <createReview>
+        <reviewData>
+          <author>
+            <userName>{authorCreator}</userName>
+          </author>
           <creator>
-            <userName>
-              {authorCreator}
-            </userName>
+            <userName>{authorCreator}</userName>
           </creator>
-          <description>
-            {commitMessage}
-          </description>
-          <metricsVersion>
-            {Actions.metricsVersion}
-          </metricsVersion>
-          <name>
-            {reviewName}
-          </name>
-          <projectKey>
-            {Actions.projectKey}
-          </projectKey>
+          <description>{commitMessage}</description>
+          <name>{reviewName}</name>
+          <projectKey>{Actions.projectKey}</projectKey>
+          <state>{if(startReview) "Review" else "Draft"}</state>
           <type>REVIEW</type>
         </reviewData>
         <changesets>
           <changesetData>
-            <id>
-              {changeSet}
-            </id>
+            <id>{changeSet}</id>
           </changesetData>
-          <repository>
-            {Actions.repository}
-          </repository>
+          <repository>{Actions.repository}</repository>
         </changesets>
       </createReview>
 
     val (responseCode: Int, response) =
-      session.doHttp(crucibleBaseURL + "/reviews-v1/", "POST", Some(getXMLString(requestXML)), "application/xml")
+      session.doHttp(crucibleBaseURL + "rest-service/reviews-v1/", "POST", Some(getXMLString(requestXML)), "application/xml")
 
     // parse response
     val responseXML = scala.xml.XML.loadString(response)
@@ -110,28 +102,47 @@ class Actions(session: Session, crucibleBaseURL: String) {
     id
   }
 
-  def addComment(reviewId: String, message: String) {
+  def addComment(reviewId: String, message: String, commenter: String) {
     val requestXML =
       <generalCommentData>
-        <message>
-          {message}
-        </message>
+        <message>{message}</message>
+        <user>
+          <userName>{commenter}</userName>
+        </user>
       </generalCommentData>
 
     val (responseCode: Int, response) =
-      session.doHttp(crucibleBaseURL + "/reviews-v1/" + reviewId + "/comments", "POST", Some(getXMLString(requestXML)), "application/xml")
+      session.doHttp(crucibleBaseURL + "rest-service/reviews-v1/" + reviewId + "/comments", "POST", Some(getXMLString(requestXML)), "application/xml")
 
-    checkResponse(responseCode)
+    checkResponse(responseCode, "while adding comment by "+ commenter +" to "+ reviewId +": "+ message)
   }
 
   def addReviewers(reviewId: String, reviewers: List[String], community: Boolean) {
-    val (responseCode: Int, data) = session.doHttp(crucibleBaseURL + "reviews-v1/" + reviewId, "POST", Some(reviewers.mkString(",")))
-    checkResponse(responseCode)
+    val allReviewers = {
+      if (community) "community" :: reviewers
+      else reviewers
+    }
+    val (responseCode: Int, data) = session.doHttp(crucibleBaseURL + "rest-service/reviews-v1/" + reviewId, "POST", Some(allReviewers.mkString(",")), "application/xml")
+    checkResponse(responseCode, "while adding reviewers to "+ reviewId +": "+ allReviewers)
   }
 
   def userExists(user: String): Boolean =
-    session.doHttp(crucibleBaseURL + "users-v1/" + user)._1 == HttpURLConnection.HTTP_OK
+    session.doHttp(crucibleBaseURL + "rest-service/users-v1/" + user)._1 == HttpURLConnection.HTTP_OK
+    
+  def changeSetExists(changeSet: Int, repository: String = Actions.repository) =
+    session.doHttp(crucibleBaseURL +"rest-service-fe/revisionData-v1/changeset/"+ repository +"/"+ changeSet)._1 == HttpURLConnection.HTTP_OK
 
+  def waitForCommit(changeSet: Int)(op: => Unit) {
+    var timeout = 10
+    while (!changeSetExists(changeSet) && timeout <= Actions.waitTimeoutSecs) {
+      println("changeset not found, waiting for "+ timeout +" seconds")
+      Thread.sleep(timeout)
+      timeout *= 2
+    }
+    if (changeSetExists(changeSet)) op
+    else throw new RuntimeException("Changeset "+ changeSet +"not found in crucible")
+  }
+    
   def parseMessage(commitMessage: String, commiter: String): (List[String], String, Boolean) = {
     val comment = new StringBuffer()
 
@@ -157,9 +168,9 @@ class Actions(session: Session, crucibleBaseURL: String) {
     (reviewUsers, comment.toString(), community)
   }
 
-  private def checkResponse(responseCode: Int) {
+  private def checkResponse(responseCode: Int, details: String) {
     if (responseCode != HttpURLConnection.HTTP_OK)
-      throw new RuntimeException("Web service responded with error code " + responseCode)
+      throw new RuntimeException("Web service responded with error code " + responseCode +" ["+ details +"]")
   }
 
   private def getXMLString(node: Node): String = {
