@@ -11,7 +11,7 @@ object Main {
     val commits = Jenkins.getCommitData(buildURL)
 
     println("commits:")
-    println(commits)
+    println(commits.mkString(">> ", "\n\n>> ", "\n\n>> "))
 
     val jiraSession = new AuthSession(username, password)
     val jiraActions = new jira.JIRA(jiraSession)
@@ -48,9 +48,9 @@ object Main {
         
           val (reviewers: scala.List[String], comment: String, community) = fecruActions.parseMessage(commit.message, commit.user)
           println("\nparsed message:")
-          println(reviewers)
-          println(comment)
-          println(community)
+          println("  reviewers: "+ reviewers.mkString(", "))
+          println("  comment  : "+ comment)
+          println("  community: "+ community)
           val startReview = reviewers.nonEmpty || community
 
           val id = fecruActions.createReview(commit.user, commit.message, commit.revision, startReview, community)
@@ -60,6 +60,7 @@ object Main {
             fecruActions.addComment(id, comment, commit.user)
         
           if (!startReview) {
+            println("review remains in draft, there are no reviewers")
             val txt = "{color:red}*review creator error*{color}: no reviewers specified. please add them manually and click \"Start Review\"."
             fecruActions.addComment(id, txt, commit.user)
           }
