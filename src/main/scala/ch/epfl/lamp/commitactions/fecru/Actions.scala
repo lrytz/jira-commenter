@@ -7,6 +7,11 @@ import xml.Node
 object Actions {
   val projectKey = "SR"
   val repository = "scala-svn"
+
+  // local testing
+  //val projectKey = "CR"
+  //val repository = "checkstyle"
+    
   // val metricsVersion = 1
     
   val waitTimeoutSecs = 160
